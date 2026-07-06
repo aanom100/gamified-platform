@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 function App(){
   const[message,setMessage]=useState('Loading....');
   useEffect(()=>{
-    fetch('http://localhost:5000/api/test')
+    fetch('https://gamified-platform-32ih.onrender.com/api/test')
     .then(res=>res.json())
     .then(data=>setMessage(data.message))
     .catch(Err=>setMessage('Pipeline disconnected..'))
