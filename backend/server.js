@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import Challenge from './models/Challenge.js';
+
 
 dotenv.config();
 //the above line allows us to read variables in .env file and load them into the process.env object for use in our code
@@ -25,6 +27,24 @@ mongoose.connect(process.env.MONGO_URI).then(()=>console.log('MongoDB successful
 app.get('/api/test',(req,res)=>{
     res.json({message:'The pipeline is successfully connected!'})
 });
+
+app.post('/api/challenges',async (req,res)=>{
+    try{
+        const {title,description,points}=req.body;
+    const newChallenge=new Challenge({
+        title,
+        description,
+        points
+    })
+    await newChallenge.save();
+
+    res.status(201).json(newChallenge);
+    }
+catch(error){
+    console.error(error);
+    res.status(500).json({error:'Failed to create challenge!'})
+}
+})
 
 const PORT=process.env.PORT || 5000;
 app.listen(PORT,()=>{
