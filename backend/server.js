@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 
 dotenv.config();
 //the above line allows us to read variables in .env file and load them into the process.env object for use in our code
@@ -15,6 +16,11 @@ app.use(cors({
 
 
 app.use(express.json());
+
+//Database connection below
+console.log("DEBUG - My URI is:", `[${process.env.MONGO_URI}]`);
+mongoose.connect(process.env.MONGO_URI).then(()=>console.log('MongoDB successfully connected!')).catch((err)=>console.log('MongoDB connection error:',err))
+
 
 app.get('/api/test',(req,res)=>{
     res.json({message:'The pipeline is successfully connected!'})
