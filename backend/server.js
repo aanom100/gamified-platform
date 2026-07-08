@@ -24,10 +24,6 @@ console.log("DEBUG - My URI is:", `[${process.env.MONGO_URI}]`);
 mongoose.connect(process.env.MONGO_URI).then(()=>console.log('MongoDB successfully connected!')).catch((err)=>console.log('MongoDB connection error:',err))
 
 
-app.get('/api/test',(req,res)=>{
-    res.json({message:'The pipeline is successfully connected!'})
-});
-
 app.post('/api/challenges',async (req,res)=>{
     try{
         const {title,description,points}=req.body;
@@ -46,7 +42,20 @@ catch(error){
 }
 })
 
+app.get('/api/challenges',async (req,res)=>{
+    try{
+    const challenges = await Challenge.find({isActive: true}).sort({createdAt: -1});
+    res.status(200).json(challenges)
+    }
+    catch(error){
+        console.error(error)
+        res.status(500).json({message:'No challenges active at the moment!'})
+    }
+})
+
 const PORT=process.env.PORT || 5000;
 app.listen(PORT,()=>{
     console.log(`Server is running on ${PORT}...`)
 })
+
+
