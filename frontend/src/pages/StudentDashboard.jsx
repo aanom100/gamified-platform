@@ -1,80 +1,111 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 function StudentDashboard() {
+    // --- 1. MEMORY VARIABLES (Clean camelCase) ---
     const [challenges, setChallenges] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [activeChallengeId, setActiveChallengeId] = useState(null);
+    const [submitData, setSubmitData] = useState({ studentName: '', contentURL: '' });
+    const [submitStatus, setSubmitStatus] = useState('');
 
+    // --- 2. FETCH DATA ON LOAD ---
     useEffect(() => {
         const fetchChallenges = async () => {
             try {
-                // Fetch from our local Express server
                 const response = await fetch('http://localhost:5000/api/challenges');
                 if (response.ok) {
                     const data = await response.json();
                     setChallenges(data);
-                } else {
-                    console.error('Failed to fetch challenges');
                 }
             } catch (error) {
-                console.error('Error connecting to backend:', error);
+                console.error("Network Error:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchChallenges();
-    }, []); // Empty array means this runs exactly ONCE when the page loads
+    }, []); 
 
-    if (loading) {
-        return <div style={{ padding: '20px', textAlign: 'center' }}>Loading Arena...</div>;
-    }
+    // --- 3. HANDLE TYPING ---
+    const handleInputChange = (e) => {
+        setSubmitData({ ...submitData, [e.target.name]: e.target.value });
+    };
+
+    // --- 4. HANDLE SUBMIT ---
+    const handleFormSubmit = async (e, challengeId) => {
+        e.preventDefault();
+        setSubmitStatus('Submitting solution...');
+
+        try {
+            const response = await fetch('http://localhost:5000/api/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    challenge: challengeId,
+                    studentName: submitData.studentName,
+                    contentURL: submitData.contentURL 
+                })
+            });
+
+            if (response.ok) {
+                setSubmitStatus('Successfully submitted!');
+                setSubmitData({ studentName: '', solutionText: '' });
+                setActiveChallengeId(null); // Closes the form
+            } else {
+                setSubmitStatus('Failed to submit solution.');
+            }
+        } catch (error) {
+            console.error(error);
+            setSubmitStatus('Error connecting to server.');
+        }
+    };
+
+    // --- 5. THE UI (HTML) ---
+    if (loading) return <div>Loading Arena...</div>;
 
     return (
-        <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'sans-serif' }}>
-            <h2>Available Quests & Challenges</h2>
-            <p>Select a quest to begin your submission.</p>
+        <div>
+            <h2>Student Arena</h2>
+            <p>{submitStatus}</p>
 
             {challenges.length === 0 ? (
-                <p style={{ color: '#666', fontStyle: 'italic' }}>No active challenges at the moment. Check back soon!</p>
+                <p>No active challenges at the moment.</p>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
+                <div>
                     {challenges.map((challenge) => (
-                        <div 
-                            key={challenge._id} 
-                            style={{ 
-                                padding: '20px', 
-                                border: '1px solid #e0e0e0', 
-                                borderRadius: '8px', 
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                backgroundColor: '#fff'
-                            }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>{challenge.title}</h3>
-                                <span style={{ 
-                                    backgroundColor: '#e3faf2', 
-                                    color: '#0ca678', 
-                                    padding: '5px 10px', 
-                                    borderRadius: '16px', 
-                                    fontWeight: 'bold',
-                                    fontSize: '14px' 
-                                }}>
-                                    +{challenge.points} XP
-                                </span>
-                            </div>
-                            <p style={{ color: '#555', margin: '0 0 15px 0', lineHeight: '1.5' }}>
-                                {challenge.description}
-                            </p>
-                            <button style={{ 
-                                padding: '8px 16px', 
-                                backgroundColor: '#1098ad', 
-                                color: 'white', 
-                                border: 'none', 
-                                borderRadius: '4px', 
-                                cursor: 'pointer' 
-                            }}>
-                                Submit Solution
-                            </button>
+                        <div key={challenge._id} style={{ border: '1px solid gray', margin: '10px', padding: '10px' }}>
+                            <h3>{challenge.title}</h3>
+                            <p>{challenge.description}</p>
+                            <p><strong>Reward:</strong> {challenge.points} XP</p>
+
+                            {/* The Toggle Logic */}
+                            {activeChallengeId === challenge._id ? (
+                                <form onSubmit={(e) => handleFormSubmit(e, challenge._id)}>
+                                    <input 
+                                        type="text" 
+                                        name="studentName" 
+                                        placeholder="Your Name / Roll No" 
+                                        value={submitData.studentName}
+                                        onChange={handleInputChange}
+                                        required 
+                                    />
+                                    <br /><br />
+                                    <textarea 
+                                        name="contentURL" 
+                                        placeholder="Paste your code or solution link here..." 
+                                        value={submitData.contentURL}
+                                        onChange={handleInputChange}
+                                        required 
+                                    />
+                                    <br />
+                                    <button type="submit">Send to Professor</button>
+                                    <button type="button" onClick={() => setActiveChallengeId(null)}>Cancel</button>
+                                </form>
+                            ) : (
+                                <button onClick={() => setActiveChallengeId(challenge._id)}>
+                                    Submit Solution
+                                </button>
+                            )}
                         </div>
                     ))}
                 </div>

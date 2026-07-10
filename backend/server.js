@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import Challenge from './models/Challenge.js';
+import Submission from './models/Submission.js';
 
 
 dotenv.config();
@@ -44,7 +45,7 @@ catch(error){
 
 app.get('/api/challenges',async (req,res)=>{
     try{
-    const challenges = await Challenge.find({isActive: true}).sort({createdAt: -1});
+    const challenges = await Challenge.find().sort({createdAt: -1});
     res.status(200).json(challenges)
     }
     catch(error){
@@ -52,6 +53,55 @@ app.get('/api/challenges',async (req,res)=>{
         res.status(500).json({message:'No challenges active at the moment!'})
     }
 })
+
+app.post('/api/submissions', async(req,res)=>{
+  const{challenge,studentName,contentURL}=req.body;
+  
+  try{
+    const newSubmission= new Submission({
+    challenge:challenge,
+    studentName:studentName,
+    contentURL:contentURL
+  })
+  await newSubmission.save()
+  res.status(200).json(newSubmission)
+}
+catch(error){
+    console.error(error)
+    res.json(500).json({message:'Submission failed!'})
+}
+})
+// GET ALL PENDING SUBMISSIONS
+app.get('/api/submissions', async (req, res) => {
+    try {
+        // .populate() is Mongoose magic. It looks at the challenge ID, grabs the 
+        // actual Challenge data (title, points), and bundles it together!
+        const submissions = await Submission.find({ status: 'pending' })
+            .populate('challenge') 
+            .sort({ createdAt: 1 }); // Oldest first so the professor grades fairly
+            
+        res.status(200).json(submissions);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch submissions' });
+    }
+});
+
+// APPROVE A SUBMISSION
+app.put('/api/submissions/:id/approve', async (req, res) => {
+    try {
+        // Find the submission by the ID in the URL and change its status
+        const updatedSubmission = await Submission.findByIdAndUpdate(
+            req.params.id,
+            { status: 'approved' },
+            { returnDocument: 'after' }
+        );
+        res.status(200).json(updatedSubmission);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to approve submission' });
+    }
+});
 
 const PORT=process.env.PORT || 5000;
 app.listen(PORT,()=>{
