@@ -7,6 +7,8 @@ import Submission from './models/Submission.js';
 import User from './models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import auth from './middleware/auth.js';
+import Classroom from './models/Classroom.js';
 
 
 dotenv.config();
@@ -27,35 +29,48 @@ app.use(express.json());
 console.log("DEBUG - My URI is:", `[${process.env.MONGO_URI}]`);
 mongoose.connect(process.env.MONGO_URI).then(()=>console.log('MongoDB successfully connected!')).catch((err)=>console.log('MongoDB connection error:',err))
 
+// 1. CREATE A CHALLENGE FOR A SPECIFIC CLASSROOM (PROFESSOR ONLY)
+app.post('/api/classrooms/:classroomId/challenges', auth, async (req, res) => {
+    try {
+        // Role check
+        if (req.user.role !== 'professor') {
+            return res.status(403).json({ error: 'Access denied. Only professors can create challenges.' });
+        }
 
-app.post('/api/challenges',async (req,res)=>{
-    try{
-        const {title,description,points}=req.body;
-    const newChallenge=new Challenge({
-        title,
-        description,
-        points
-    })
-    await newChallenge.save();
+        const { title, description, points } = req.body;
+        const { classroomId } = req.params;
 
-    res.status(201).json(newChallenge);
-    }
-catch(error){
-    console.error(error);
-    res.status(500).json({error:'Failed to create challenge!'})
-}
-})
+        // Build the challenge securely tied to the classroom parameter
+        const newChallenge = new Challenge({
+            title,
+            description,
+            points: points || 10,
+            classroom: classroomId
+        });
 
-app.get('/api/challenges',async (req,res)=>{
-    try{
-    const challenges = await Challenge.find().sort({createdAt: -1});
-    res.status(200).json(challenges)
+        await newChallenge.save();
+        res.status(201).json(newChallenge);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to create challenge!' });
     }
-    catch(error){
-        console.error(error)
-        res.status(500).json({message:'No challenges active at the moment!'})
+});
+
+// 2. GET ALL CHALLENGES LOCKED TO A SPECIFIC CLASSROOM
+app.get('/api/classrooms/:classroomId/challenges', auth, async (req, res) => {
+    try {
+        const { classroomId } = req.params;
+
+        // Only pull challenges that match this specific classroom ID
+        const challenges = await Challenge.find({ classroom: classroomId })
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(challenges);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'No challenges active at the moment!' });
     }
-})
+});
 
 app.post('/api/submissions', async(req,res)=>{
   const{challenge,studentName,contentURL}=req.body;
@@ -120,13 +135,13 @@ app.post('/api/auth/register',async (req,res)=>{
         const newUser=new User({
             name,
             email,
-            password:hashesPassword,
+            password:hashedPassword,
             role:role || 'student'
         })
         await newUser.save();
         res.status(201).json({message:'user registered successfully!'})
     }catch(error){
-        console.error('registration error,error');
+        console.error('registration error',error);
         res.status(500).json({error:'Server error during registration!'})
     }
 })
@@ -144,7 +159,7 @@ app.post('/api/auth/login',async(req,res)=>{
             return res.status(400).json({error:'Invalid email or password!'})
         }
         //generating the JWT
-        const token=jwt.sign({id:user._id,role:user.role},process.env.JWT_SECRET,{expiratopm:'1d'})
+        const token=jwt.sign({id:user._id,role:user.role},process.env.JWT_SECRET,{expiresIn:'1d'})
         res.status(200).json({
             token,
             user:{
@@ -159,7 +174,109 @@ app.post('/api/auth/login',async(req,res)=>{
         res.status(500).json({error:'Server error during login'})
     }
 })
+app.post('/api/classrooms/create',auth,async(req,res)=>{
+    try{
+        if(req.user.role!=='professor'){
+            return res.status(403).json("error:Access only given to professors!")
+        }
+        const{name}=req.body;
+        const joinCode=Math.random().toString(36).substring(2,8).toUpperCase();
+        const newClassroom=new Classroom({
+            name,
+            professor:req.user.id,
+            joinCode
+        })
+        await newClassroom.save();
+        res.status(201).json({message:'Classroom created',classroom:newClassroom})
+    }
+    catch(error){
+        console.error(error);
+        res.status(500).json({error:'Server error while creating classroom!'})
+    }
 
+})
+
+app.post('/api/classroom/join',async(req,res)=>{
+    try{
+        if(req.user.role!=='student'){
+            return res.status(403).json({error:'Only students can join!'})
+        }
+        const{joinCode}=req.body;
+
+        const classroom=await Classroom.findOne({joinCode:joinCode.toUpperCase()})
+        if(!classroom){
+            return res.status(404).json({error:'Classroom not found!!'})
+        }
+        if(classroom.students.includes(req.user.id)|| classroom.pendingRequests.includes(req.user.id)){
+            return res.status(400).json({error:'You are already in this class or have a pending request.'})
+        }
+        classroom.pendingRequests.push(req.user.id);
+        await classroom.save();
+        res.status(200).json({message:'Join request sent to professor!'})
+    }
+    catch(error){
+        console.error(error)
+            res.status(500).json({error:'Server error while requesting to join!'})
+        }
+    })
+
+// 3. APPROVE STUDENT REQUEST (PROFESSOR ONLY)
+app.post('/api/classrooms/:classroomId/approve', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'professor') {
+            return res.status(403).json({ error: 'Only professors can approve students.' });
+        }
+
+        const { studentId } = req.body;
+        const { classroomId } = req.params;
+
+        // 1. Find the classroom
+        const classroom = await Classroom.findById(classroomId);
+        if (!classroom) {
+            return res.status(404).json({ error: 'Classroom not found.' });
+        }
+        
+        // 2. Security Check: Does THIS professor own THIS classroom?
+        if (classroom.professor.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'You do not own this classroom.' });
+        }
+
+        // 3. Verify the student is actually in the waiting room
+        if (!classroom.pendingRequests.includes(studentId)) {
+            return res.status(400).json({ error: 'Student is not in the waiting room.' });
+        }
+
+        // 4. Move the student from pendingRequests -> students array
+        classroom.pendingRequests = classroom.pendingRequests.filter(id => id.toString() !== studentId);
+        classroom.students.push(studentId);
+        await classroom.save();
+
+        // 5. Add this classroom to the Student's profile backpack
+        const user = await User.findById(studentId);
+        user.classrooms.push(classroomId);
+        await user.save();
+
+        res.status(200).json({ message: 'Student officially added to the class roster!' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error while approving student.' });
+    }
+});
+// GET A PROFESSOR'S CLASSROOMS
+app.get('/api/classrooms/me', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'professor') {
+            return res.status(403).json({ error: 'Access denied.' });
+        }
+        // Find all classrooms where the professor ID matches the logged-in user
+        const classrooms = await Classroom.find({ professor: req.user.id });
+        res.status(200).json(classrooms);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch classrooms' });
+    }
+});
 const PORT=process.env.PORT || 5000;
 app.listen(PORT,()=>{
     console.log(`Server is running on ${PORT}...`)

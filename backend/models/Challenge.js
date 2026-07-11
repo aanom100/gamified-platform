@@ -17,6 +17,11 @@ const challengeSchema=new mongoose.Schema({
     isActive:{
         type:Boolean,
         default:true
+    },
+    classroom: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Classroom',
+        required: true
     }
 
 },{timestamps:true})//this automatically adds 'created at' and 'updated at'
