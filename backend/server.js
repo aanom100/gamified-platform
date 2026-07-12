@@ -196,7 +196,7 @@ app.post('/api/classrooms/create',auth,async(req,res)=>{
 
 })
 
-app.post('/api/classroom/join',async(req,res)=>{
+app.post('/api/classrooms/join',auth ,async(req,res)=>{
     try{
         if(req.user.role!=='student'){
             return res.status(403).json({error:'Only students can join!'})
@@ -220,47 +220,43 @@ app.post('/api/classroom/join',async(req,res)=>{
         }
     })
 
-// 3. APPROVE STUDENT REQUEST (PROFESSOR ONLY)
+// APPROVE A STUDENT TO JOIN A CLASSROOM
 app.post('/api/classrooms/:classroomId/approve', auth, async (req, res) => {
     try {
         if (req.user.role !== 'professor') {
-            return res.status(403).json({ error: 'Only professors can approve students.' });
+            return res.status(403).json({ error: 'Access denied. Professors only.' });
         }
 
-        const { studentId } = req.body;
         const { classroomId } = req.params;
+        const { studentId } = req.body;
 
-        // 1. Find the classroom
         const classroom = await Classroom.findById(classroomId);
         if (!classroom) {
             return res.status(404).json({ error: 'Classroom not found.' });
         }
-        
-        // 2. Security Check: Does THIS professor own THIS classroom?
-        if (classroom.professor.toString() !== req.user.id) {
-            return res.status(403).json({ error: 'You do not own this classroom.' });
-        }
 
-        // 3. Verify the student is actually in the waiting room
-        if (!classroom.pendingRequests.includes(studentId)) {
+        // SAFE COMPARISON: Convert ObjectId to String using .toString()
+        const isPending = classroom.pendingRequests.some(id => id.toString() === studentId);
+        
+        if (!isPending) {
             return res.status(400).json({ error: 'Student is not in the waiting room.' });
         }
 
-        // 4. Move the student from pendingRequests -> students array
-        classroom.pendingRequests = classroom.pendingRequests.filter(id => id.toString() !== studentId);
-        classroom.students.push(studentId);
+        // 1. Remove from waiting room (filter out strings)
+        classroom.pendingRequests = classroom.pendingRequests.filter(
+            id => id.toString() !== studentId
+        );
+
+        // 2. Add to official student roster if not already there
+        if (!classroom.students.map(id => id.toString()).includes(studentId)) {
+            classroom.students.push(studentId);
+        }
+
         await classroom.save();
-
-        // 5. Add this classroom to the Student's profile backpack
-        const user = await User.findById(studentId);
-        user.classrooms.push(classroomId);
-        await user.save();
-
-        res.status(200).json({ message: 'Student officially added to the class roster!' });
-
+        res.status(200).json({ message: 'Student approved successfully!' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server error while approving student.' });
+        console.error("Approval Error:", error);
+        res.status(500).json({ error: 'Failed to approve student.' });
     }
 });
 // GET A PROFESSOR'S CLASSROOMS
@@ -270,11 +266,28 @@ app.get('/api/classrooms/me', auth, async (req, res) => {
             return res.status(403).json({ error: 'Access denied.' });
         }
         // Find all classrooms where the professor ID matches the logged-in user
-        const classrooms = await Classroom.find({ professor: req.user.id });
+        const classrooms = await Classroom.find({ professor: req.user.id })
+              .populate('pendingRequests','name email')
+              .populate('students','name email')
         res.status(200).json(classrooms);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch classrooms' });
+    }
+});
+// GET A STUDENT'S ENROLLED CLASSROOMS
+app.get('/api/classrooms/enrolled', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'student') {
+            return res.status(403).json({ error: 'Access denied. Students only.' });
+        }
+        
+        // Find classes where this user's ID exists in the 'students' array
+        const classrooms = await Classroom.find({ students: req.user.id });
+        res.status(200).json(classrooms);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch enrolled classes' });
     }
 });
 const PORT=process.env.PORT || 5000;

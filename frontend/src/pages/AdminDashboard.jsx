@@ -11,6 +11,7 @@ function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('classrooms');
     const [classrooms, setClassrooms] = useState([]);
     const [selectedClassroom, setSelectedClassroom] = useState(null); // Tracks which class we are viewing
+    const [activeChallenges, setActiveChallenges] = useState([]);
     
     // Classroom Form State
     const [newClassName, setNewClassName] = useState('');
@@ -45,6 +46,29 @@ function AdminDashboard() {
         };
         fetchClassrooms();
     }, []);
+    // Fetch challenges specifically for the selected classroom
+    useEffect(() => {
+        const fetchChallenges = async () => {
+            if (!selectedClassroom) return;
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`http://localhost:5000/api/classrooms/${selectedClassroom._id}/challenges`, {
+                    headers: { 'x-auth-token': token }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setActiveChallenges(data);
+                }
+            } catch (error) {
+                console.error("Failed to load challenges", error);
+            }
+        };
+
+        // Only fetch if we are actually looking at the class detail view
+        if (activeTab === 'class-detail') {
+            fetchChallenges();
+        }
+    }, [selectedClassroom, activeTab]);
 
     // --- ACTION HANDLERS ---
     
@@ -82,11 +106,16 @@ function AdminDashboard() {
                 body: JSON.stringify(challengeData)
             });
 
-            if (response.ok) {
+               if (response.ok) {
+                // ADD THIS LINE to instantly put the new challenge at the top of the list
+                const newChallengeData = await response.json();
+                setActiveChallenges([newChallengeData, ...activeChallenges]); 
+                
                 toast({ title: 'Challenge Deployed!', status: 'success', duration: 2000 });
-                setChallengeData({ title: '', description: '', points: 50 }); // Reset form
+                setChallengeData({ title: '', description: '', points: 50 }); 
                 closeAddChallenge(); 
-            } else {
+            }
+            else {
                 toast({ title: 'Failed to create challenge', status: 'error', duration: 2000 });
             }
         } catch (error) {
@@ -101,7 +130,38 @@ function AdminDashboard() {
         localStorage.removeItem('userRole');
         navigate('/');
     };
+    const handleApproveStudent=async(studentId)=>{
+        try{
+            const token=localStorage.getItem('token');
+            const response = await fetch(`http://localhost:5000/api/classrooms/${selectedClassroom._id}/approve`, {
+    method: 'POST', // 🚨 DOUBLE CHECK THIS LINE! Make sure it says 'POST', not 'GET'
+    headers: { 
+        'Content-Type': 'application/json', 
+        'x-auth-token': token 
+    },
+    body: JSON.stringify({ studentId })
+});
+            if(response.ok){
+                toast({title:'Student Approved!',status:'success',duration:2000})
+                //logic to shift student from pending to updated list
+                const approvedStudent=selectedClassroom.pendingRequests.find(s=>s.id===studentId)
+                const updatedPending=selectedClassroom.pendingRequests.filter(s=>s.id!==studentId)
+                const updatedStudents=[...selectedClassroom.students,approvedStundent];
+                const updatedClassroom={...selectedClassroom,pendingRequests:updatedPending,students:updatedStudents};
+                
+                setSelectedClassroom(updatedClassroom);
+                setClassrooms(classrooms.map(c=>c._id===updatedClassroom._id? updatedClassroom:c))
+            }
+            else{
+                toast({ title: 'Approval Failed', status: 'error', duration: 2000 });
+            }
 
+        }
+        catch (error) {
+            toast({ title: 'Network Error', status: 'error', duration: 2000 });
+        }
+    };
+    
     return (
         <Flex bg="gray.50" minH="100vh">
             {/* SIDEBAR ANCHOR */}
@@ -210,10 +270,54 @@ function AdminDashboard() {
                                 <Heading size="md" mb={4}>Active Challenges</Heading>
                                 <Text color="gray.500">Challenges will appear here.</Text>
                             </Box>
+                           
+                               
                             <Box p={5} bg="white" borderRadius="md" shadow="sm" border="1px" borderColor="gray.200">
                                 <Heading size="md" mb={4}>Student Roster</Heading>
-                                <Text color="gray.500">Students will appear here once they join.</Text>
+                                
+                                
+                                {selectedClassroom.pendingRequests?.length > 0 && (
+                                    <Box mb={6} p={4} bg="orange.50" border="1px" borderColor="orange.200" borderRadius="md">
+                                        <Text fontWeight="bold" color="orange.800" mb={3}>
+                                            ⏳ Waiting Room ({selectedClassroom.pendingRequests.length})
+                                        </Text>
+                                        <VStack align="stretch" spacing={2}>
+                                            {selectedClassroom.pendingRequests.map(student => (
+                                                <Flex key={student._id} justify="space-between" align="center" bg="white" p={2} borderRadius="md" shadow="sm">
+                                                    <Box>
+                                                        <Text fontWeight="bold" fontSize="sm">{student.name}</Text>
+                                                        <Text fontSize="xs" color="gray.500">{student.email}</Text>
+                                                    </Box>
+                                                    <Button size="sm" colorScheme="green" onClick={() => handleApproveStudent(student._id)}>
+                                                        Approve
+                                                    </Button>
+                                                </Flex>
+                                            ))}
+                                        </VStack>
+                                    </Box>
+                                )}
+
+                                {/* 2. The Official Roster */}
+                                <Text fontWeight="bold" color="gray.700" mb={3}>
+                                    ✅ Enrolled Students ({selectedClassroom.students?.length || 0})
+                                </Text>
+                                {selectedClassroom.students?.length === 0 ? (
+                                    <Text color="gray.500" fontSize="sm">No students enrolled yet.</Text>
+                                ) : (
+                                    <VStack align="stretch" spacing={2}>
+                                        {selectedClassroom.students.map(student => (
+                                            <Flex key={student._id} justify="space-between" align="center" bg="gray.50" p={2} borderRadius="md" borderWidth="1px">
+                                                <Box>
+                                                    <Text fontWeight="bold" fontSize="sm">{student.name}</Text>
+                                                    <Text fontSize="xs" color="gray.500">{student.email}</Text>
+                                                </Box>
+                                                <Badge colorScheme="blue">Student</Badge>
+                                            </Flex>
+                                        ))}
+                                    </VStack>
+                                )}
                             </Box>
+                            
                         </Grid>
                     </Box>
                 )}
