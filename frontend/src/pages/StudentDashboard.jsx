@@ -27,6 +27,8 @@ function StudentDashboard() {
     const [leaderboard, setLeaderboard] = useState([]);
     const [viewMode, setViewMode] = useState('challenges'); // Toggles between challenges and leaderboard
 
+    const [globalRankings, setGlobalRankings] = useState([]);
+
     // Submission Modal Remote Control
     const { 
         isOpen: isSubmitOpen, 
@@ -42,7 +44,7 @@ function StudentDashboard() {
         const fetchEnrolledClasses = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:5000/api/classrooms/enrolled', {
+                const response = await fetch('https://gamified-platform-1.onrender.com/api/classrooms/enrolled', {
                     headers: { 'x-auth-token': token }
                 });
                 if (response.ok) {
@@ -62,7 +64,7 @@ function StudentDashboard() {
         setIsJoining(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/classrooms/join', {
+            const response = await fetch('https://gamified-platform-1.onrender.com/api/classrooms/join', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                 body: JSON.stringify({ joinCode })
@@ -93,12 +95,12 @@ function StudentDashboard() {
         const token = localStorage.getItem('token');
         
         // Fetch Challenges
-        const challengeRes = await fetch(`http://localhost:5000/api/classrooms/${classroom._id}/challenges`, {
+        const challengeRes = await fetch(`https://gamified-platform-1.onrender.com/api/classrooms/${classroom._id}/challenges`, {
             headers: { 'x-auth-token': token }
         });
         
         // Fetch Leaderboard
-        const leaderRes = await fetch(`http://localhost:5000/api/classrooms/${classroom._id}/leaderboard`, {
+        const leaderRes = await fetch(`https://gamified-platform-1.onrender.com/api/classrooms/${classroom._id}/leaderboard`, {
             headers: { 'x-auth-token': token }
         });
         
@@ -130,7 +132,7 @@ function StudentDashboard() {
             }
             if(submissionData.comment) formData.append('comment',submissionData.comment);
 
-            const response = await fetch(`http://localhost:5000/api/challenges/${selectedChallenge._id}/submit`, {
+            const response = await fetch(`https://gamified-platform-1.onrender.com/api/challenges/${selectedChallenge._id}/submit`, {
                 method: 'POST',
                 headers: { 
                  // 🚨 CRITICAL: Do NOT add 'Content-Type': 'application/json' here!
@@ -158,6 +160,26 @@ function StudentDashboard() {
             setIsSubmitting(false);
         }
     };
+   
+
+// function when the user clicks the "Leaderboard" tab in the sidebar
+const fetchGlobalLeaderboard = async () => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('https://gamified-platform-1.onrender.com/api/leaderboard/global', {
+            headers: { 'x-auth-token': token }
+        });
+        if (response.ok) {
+            setGlobalRankings(await response.json());
+        }
+    } catch (error) {
+        console.error("Failed to load global rankings");
+    }
+};
+// Trigger the fetch the moment the Global Leaderboard loads!
+    useEffect(() => {
+        fetchGlobalLeaderboard();
+    }, []);
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('userRole');
@@ -362,10 +384,68 @@ function StudentDashboard() {
 
                 {/* 2. LEADERBOARD TAB */}
                 {activeTab === 'leaderboard' && (
-                    <Box>
-                        <Heading size="lg" mb={6}>Global Rankings</Heading>
-                        <Text color="gray.500">The hall of fame will appear here.</Text>
-                    </Box>
+                    <Box maxW="800px" mx="auto" mt={8}>
+    <Heading size="xl" mb={2} color="purple.800">🌍 Global Hall of Fame</Heading>
+    <Text color="gray.500" mb={8}>The top performers across all arenas.</Text>
+
+    <Box bg="white" borderRadius="xl" shadow="md" border="1px" borderColor="purple.100" overflow="hidden">
+        {globalRankings.length === 0 ? (
+            <Box p={10} textAlign="center">
+                <Text color="gray.500" fontSize="lg">The servers are quiet. No XP has been awarded yet.</Text>
+            </Box>
+        ) : (
+            <VStack align="stretch" spacing={0} divider={<Box borderBottomWidth="1px" borderColor="gray.100" />}>
+                {globalRankings.map((student, index) => (
+                    <Flex 
+                        key={student._id} 
+                        p={6} 
+                        align="center" 
+                        transition="all 0.2s"
+                        _hover={{ bg: 'gray.50' }}
+                        bg={
+                            index === 0 ? 'linear-gradient(90deg, rgba(255,215,0,0.1) 0%, rgba(255,255,255,1) 100%)' : 
+                            index === 1 ? 'linear-gradient(90deg, rgba(192,192,192,0.1) 0%, rgba(255,255,255,1) 100%)' : 
+                            index === 2 ? 'linear-gradient(90deg, rgba(205,127,50,0.1) 0%, rgba(255,255,255,1) 100%)' : 
+                            'white'
+                        }
+                    >
+                        {/* The Rank Badge */}
+                        <Flex 
+                            w="50px" h="50px" 
+                            borderRadius="full" 
+                            bg={index === 0 ? 'yellow.400' : index === 1 ? 'gray.300' : index === 2 ? 'orange.400' : 'purple.50'} 
+                            color={index < 3 ? 'white' : 'purple.700'}
+                            justify="center" align="center"
+                            fontWeight="bold" fontSize="xl"
+                            shadow={index < 3 ? 'md' : 'none'}
+                        >
+                            {index === 0 ? '🏆' : index + 1}
+                        </Flex>
+                        
+                        {/* Student Name */}
+                        <Box flex="1" ml={6}>
+                            <Text fontWeight="extrabold" fontSize="xl" color="gray.800">
+                                {student.name}
+                            </Text>
+                            {index === 0 && <Text fontSize="sm" color="yellow.600" fontWeight="bold">Platform Champion</Text>}
+                        </Box>
+                        
+                        {/* Massive XP Badge */}
+                        <Badge 
+                            colorScheme={index < 3 ? "yellow" : "purple"} 
+                            fontSize="xl" 
+                            px={4} py={2} 
+                            borderRadius="lg"
+                            variant={index < 3 ? "solid" : "subtle"}
+                        >
+                            {student.totalXP} XP
+                        </Badge>
+                    </Flex>
+                ))}
+            </VStack>
+        )}
+    </Box>
+</Box>
                 )}
 
                 {/* 3. PROFILE TAB */}

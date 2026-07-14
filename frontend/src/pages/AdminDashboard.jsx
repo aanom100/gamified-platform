@@ -34,7 +34,7 @@ function AdminDashboard() {
     const fetchPendingSubmissions = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/submissions/pending', {
+            const response = await fetch('http://https://gamified-platform-1.onrender.com/api/submissions/pending', {
                 headers: { 'x-auth-token': token }
             });
             if (response.ok) {
@@ -55,7 +55,7 @@ function AdminDashboard() {
         const fetchClassrooms = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:5000/api/classrooms/me', {
+                const response = await fetch('https://gamified-platform-1.onrender.com/api/classrooms/me', {
                     headers: { 'x-auth-token': token }
                 });
                 if (response.ok) {
@@ -74,7 +74,7 @@ function AdminDashboard() {
             if (!selectedClassroom) return;
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`http://localhost:5000/api/classrooms/${selectedClassroom._id}/challenges`, {
+                const response = await fetch(`https://gamified-platform-1.onrender.com/api/classrooms/${selectedClassroom._id}/challenges`, {
                     headers: { 'x-auth-token': token }
                 });
                 if (response.ok) {
@@ -97,7 +97,7 @@ function AdminDashboard() {
     const handleApproveSubmission = async (submissionId) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/submissions/${submissionId}/approve`, {
+            const response = await fetch(`https://gamified-platform-1.onrender.com/api/submissions/${submissionId}/approve`, {
                 method: 'POST',
                 headers: { 'x-auth-token': token }
             });
@@ -120,7 +120,7 @@ function AdminDashboard() {
         setIsCreatingClass(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/classrooms/create', {
+            const response = await fetch('https://gamified-platform-1.onrender.com/api/classrooms/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                 body: JSON.stringify({ name: newClassName })
@@ -144,7 +144,7 @@ function AdminDashboard() {
         setIsCreatingChallenge(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/classrooms/${selectedClassroom._id}/challenges`, {
+            const response = await fetch(`https://gamified-platform-1.onrender.com/api/classrooms/${selectedClassroom._id}/challenges`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                 body: JSON.stringify(challengeData)
@@ -177,7 +177,7 @@ function AdminDashboard() {
     const handleApproveStudent=async(studentId)=>{
         try{
             const token=localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/classrooms/${selectedClassroom._id}/approve`, {
+            const response = await fetch(`https://gamified-platform-1.onrender.com/api/classrooms/${selectedClassroom._id}/approve`, {
     method: 'POST', // 🚨 DOUBLE CHECK THIS LINE! Make sure it says 'POST', not 'GET'
     headers: { 
         'Content-Type': 'application/json', 
