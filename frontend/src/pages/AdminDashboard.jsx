@@ -12,6 +12,8 @@ function AdminDashboard() {
     const [classrooms, setClassrooms] = useState([]);
     const [selectedClassroom, setSelectedClassroom] = useState(null); // Tracks which class we are viewing
     const [activeChallenges, setActiveChallenges] = useState([]);
+
+    const [pendingSubmissions, setPendingSubmissions] = useState([]);
     
     // Classroom Form State
     const [newClassName, setNewClassName] = useState('');
@@ -28,6 +30,26 @@ function AdminDashboard() {
     const navigate = useNavigate();
     const toast = useToast();
 
+    useEffect(() => {
+    const fetchPendingSubmissions = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/submissions/pending', {
+                headers: { 'x-auth-token': token }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setPendingSubmissions(data);
+            }
+        } catch (error) {
+            console.error("Failed to load grading queue", error);
+        }
+    };
+
+    if (activeTab === 'grading') {
+        fetchPendingSubmissions();
+    }
+}, [activeTab]);
     // Fetch Classrooms on Load
     useEffect(() => {
         const fetchClassrooms = async () => {
@@ -71,7 +93,29 @@ function AdminDashboard() {
     }, [selectedClassroom, activeTab]);
 
     // --- ACTION HANDLERS ---
-    
+
+    const handleApproveSubmission = async (submissionId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:5000/api/submissions/${submissionId}/approve`, {
+                method: 'POST',
+                headers: { 'x-auth-token': token }
+            });
+
+            if (response.ok) {
+                toast({ title: 'Quest Complete!', description: 'XP has been awarded to the student.', status: 'success', duration: 3000 });
+                
+                // Optimistic UI Update: Instantly filter this submission out of the array
+                // so it disappears from the screen without needing a page refresh!
+                setPendingSubmissions(pendingSubmissions.filter(sub => sub._id !== submissionId));
+            } else {
+                toast({ title: 'Grading Failed', status: 'error', duration: 3000 });
+            }
+        } catch (error) {
+            toast({ title: 'Network Error', status: 'error', duration: 3000 });
+        }
+    };
+
     const handleCreateClassroom = async () => {
         setIsCreatingClass(true);
         try {
@@ -162,6 +206,14 @@ function AdminDashboard() {
         }
     };
     
+    const formatExternalLink=(url)=>
+    {
+        if(!url) return '#';
+        if(!url.startsWith('http://')&& !url.startsWith('https://')){
+            return `https://${url}`
+        }
+        return url;
+    }
     return (
         <Flex bg="gray.50" minH="100vh">
             {/* SIDEBAR ANCHOR */}
@@ -324,9 +376,53 @@ function AdminDashboard() {
 
                 {/* 3. GRADING DESK TAB */}
                 {activeTab === 'grading' && (
-                    <Box>
-                        <Heading size="lg" mb={6}>Grading Desk</Heading>
-                        <Text color="gray.500">Your pending student submissions will appear here.</Text>
+                    <Box bg="white" p={6} borderRadius="lg" shadow="sm" border="1px" borderColor="gray.200">
+                        <Heading size="lg" mb={2}>📝 Grading Desk</Heading>
+                        <Text color="gray.500" mb={6}>Evaluate incoming code proofs and award XP points.</Text>
+
+                        {pendingSubmissions.length === 0 ? (
+                            <Text color="gray.500">Your grading inbox is empty! No pending submissions.</Text>
+                        ) : (
+                            <VStack align="stretch" spacing={4}>
+                                {pendingSubmissions.map((sub) => (
+                                    <Box key={sub._id} p={4} borderWidth="1px" borderRadius="md" bg="gray.50 shadow='sm'">
+                                        <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+                                            <Box>
+                                                <HStack mb={1}>
+                                                    <Text fontWeight="bold" fontSize="lg">{sub.challenge?.title}</Text>
+                                                    <Badge colorScheme="purple">+{sub.challenge?.points} XP</Badge>
+                                                </HStack>
+                                                <Text fontSize="sm" color="gray.600">
+                                                    Submitted by: <b>{sub.student?.name}</b> ({sub.student?.email})
+                                                </Text>
+                                                {sub.comment && (
+                                                    <Text fontSize="xs" color="gray.500" mt={2} fontStyle="italic" bg="white" p={2} borderRadius="sm" borderLeft="2px solid gray">
+                                                        Comment: "{sub.comment}"
+                                                    </Text>
+                                                )}
+                                            </Box>
+                                            
+                                            <HStack spacing={3}>
+                                                <Button 
+                                                    as="a" 
+                                                    href={formatExternalLink(sub.submissionUrl)} 
+                                                    target="_blank" 
+                                                    size="sm" 
+                                                    colorScheme="blue" 
+                                                    variant="outline"
+                                                >
+                                                    🔗 Review Code
+                                                </Button>
+                                                <Button size="sm" colorScheme="green"
+                                                onClick={() => handleApproveSubmission(sub._id)}>
+                                                    Accept & Reward
+                                                </Button>
+                                            </HStack>
+                                        </Flex>
+                                    </Box>
+                                ))}
+                            </VStack>
+                        )}
                     </Box>
                 )}
 
