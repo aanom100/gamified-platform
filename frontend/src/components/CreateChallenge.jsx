@@ -17,7 +17,7 @@ function CreateChallenge(){
         setStatus('Submitting....');
     
     try{
-        const response=await fetch('http://localhost:5000/api/challenges',{
+        const response=await fetch('https://gamified-platform-1.onrender.com/api/challenges',{
          method:'POST',
          headers:{'Content-Type':'application/json'},
          body:JSON.stringify(formData)   
