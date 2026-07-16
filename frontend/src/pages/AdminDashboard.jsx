@@ -185,17 +185,25 @@ function AdminDashboard() {
     },
     body: JSON.stringify({ studentId })
 });
-            if(response.ok){
-                toast({title:'Student Approved!',status:'success',duration:2000})
-                //logic to shift student from pending to updated list
-                const approvedStudent=selectedClassroom.pendingRequests.find(s=>s.id===studentId)
-                const updatedPending=selectedClassroom.pendingRequests.filter(s=>s.id!==studentId)
-                const updatedStudents=[...selectedClassroom.students,approvedStundent];
-                const updatedClassroom={...selectedClassroom,pendingRequests:updatedPending,students:updatedStudents};
-                
-                setSelectedClassroom(updatedClassroom);
-                setClassrooms(classrooms.map(c=>c._id===updatedClassroom._id? updatedClassroom:c))
-            }
+            if (response.ok) {
+    toast({ title: 'Student Approved!', status: 'success', duration: 2000 });
+    
+    // FIX 1: Use _id (MongoDB convention) instead of id
+    const approvedStudent = selectedClassroom.pendingRequests.find(s => s._id === studentId);
+    const updatedPending = selectedClassroom.pendingRequests.filter(s => s._id !== studentId);
+    
+    // FIX 2: Fixed the typo, and added a fallback just in case the students array is empty
+    const updatedStudents = [...(selectedClassroom.students || []), approvedStudent];
+    
+    const updatedClassroom = {
+        ...selectedClassroom, 
+        pendingRequests: updatedPending, 
+        students: updatedStudents
+    };
+
+    setSelectedClassroom(updatedClassroom);
+    setClassrooms(classrooms.map(c => c._id === updatedClassroom._id ? updatedClassroom : c));
+}
             else{
                 toast({ title: 'Approval Failed', status: 'error', duration: 2000 });
             }
