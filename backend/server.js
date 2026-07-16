@@ -20,7 +20,7 @@ const app=express();
 // Add both your local dev environment AND your live Vercel production URL
 const allowedOrigins = [
     'http://localhost:5173', 
-    'https://gamified-platform-ok56.vercel.app'
+    'https://gamified-platform-delta.vercel.app'
 ];
 
 app.use(cors({

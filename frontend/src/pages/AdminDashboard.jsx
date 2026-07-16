@@ -34,7 +34,7 @@ function AdminDashboard() {
     const fetchPendingSubmissions = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://https://gamified-platform-1.onrender.com/api/submissions/pending', {
+            const response = await fetch('https://gamified-platform-1.onrender.com/api/submissions/pending', {
                 headers: { 'x-auth-token': token }
             });
             if (response.ok) {
