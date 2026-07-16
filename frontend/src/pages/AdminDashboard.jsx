@@ -319,9 +319,27 @@ function AdminDashboard() {
                         {/* We will populate these with real data later! */}
                         <Grid templateColumns="1fr 1fr" gap={8}>
                             <Box p={5} bg="white" borderRadius="md" shadow="sm" border="1px" borderColor="gray.200">
-                                <Heading size="md" mb={4}>Active Challenges</Heading>
-                                <Text color="gray.500">Challenges will appear here.</Text>
-                            </Box>
+    <Heading size="md" mb={4}>Active Challenges</Heading>
+    
+    {/* WIRED TO ACTIVECHALLENGES STATE */}
+    {activeChallenges && activeChallenges.length > 0 ? (
+        <VStack align="stretch" spacing={4}>
+            {activeChallenges.map((challenge) => (
+                <Box key={challenge._id} p={4} borderWidth="1px" borderRadius="md" bg="gray.50" _hover={{ shadow: 'sm' }}>
+                    <Flex justify="space-between" align="center" mb={2}>
+                        <Heading size="sm">{challenge.title}</Heading>
+                        <Badge colorScheme="purple">{challenge.points || 50} XP</Badge>
+                    </Flex>
+                    <Text fontSize="sm" color="gray.600" noOfLines={2}>
+                        {challenge.description}
+                    </Text>
+                </Box>
+            ))}
+        </VStack>
+    ) : (
+        <Text color="gray.500">Challenges will appear here.</Text>
+    )}
+</Box>
                            
                                
                             <Box p={5} bg="white" borderRadius="md" shadow="sm" border="1px" borderColor="gray.200">
