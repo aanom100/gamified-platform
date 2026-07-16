@@ -40,23 +40,29 @@ function StudentDashboard() {
     const toast = useToast();
 
     // Fetch Enrolled Classrooms on Load
-    useEffect(() => {
-        const fetchEnrolledClasses = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch('https://gamified-platform-1.onrender.com/api/classrooms/enrolled', {
-                    headers: { 'x-auth-token': token }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setClassrooms(data);
-                }
-            } catch (error) {
-                console.error("Failed to load classes", error);
+   // Fetch Enrolled Classrooms whenever they click the Arena tab!
+useEffect(() => {
+    const fetchEnrolledClasses = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('https://gamified-platform-1.onrender.com/api/classrooms/enrolled', {
+                headers: { 'x-auth-token': token }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setClassrooms(data);
             }
-        };
+        } catch (error) {
+            console.error("Failed to load classes", error);
+        }
+    };
+
+    // Only run the fetch if they are looking at the main arena list
+    if (activeTab === 'arena' && !activeArena) {
         fetchEnrolledClasses();
-    }, []);
+    }
+
+}, [activeTab, activeArena]); // 👈 Swapped [] for these dependencies!
 
     // --- ACTION HANDLERS ---
     const handleJoinClass = async () => {
@@ -232,7 +238,7 @@ const fetchGlobalLeaderboard = async () => {
                 
                 <Flex justify="space-between" align="center" mb={6}>
                     <Box>
-                        <Heading size="lg">🏟️ {activeArena.name} Arena</Heading>
+                        <Heading size="lg">🏟️ {activeArena?.name} Arena</Heading>
                         <Text color="gray.500" mt={1}>Complete quests and climb the ranks.</Text>
                     </Box>
                     
