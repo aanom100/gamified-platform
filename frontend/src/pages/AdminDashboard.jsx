@@ -66,8 +66,10 @@ function AdminDashboard() {
                 console.error("Failed to load classrooms", error);
             }
         };
+        if (activeTab === 'classrooms') {
         fetchClassrooms();
-    }, []);
+    }
+    }, [activeTab]);
     // Fetch challenges specifically for the selected classroom
     useEffect(() => {
         const fetchChallenges = async () => {
@@ -314,9 +316,9 @@ function AdminDashboard() {
                         </Button>
                         <Flex justify="space-between" align="center" mb={6}>
                             <Box>
-                                <Heading size="lg">{selectedClassroom.name}</Heading>
+                                <Heading size="lg">{selectedClassroom?.name}</Heading>
                                 <Text color="gray.500" mt={1}>
-                                    Join Code: <Badge colorScheme="purple">{selectedClassroom.joinCode}</Badge>
+                                    Join Code: <Badge colorScheme="purple">{selectedClassroom?.joinCode}</Badge>
                                 </Text>
                             </Box>
                             <Button colorScheme="purple" onClick={openAddChallenge}>
