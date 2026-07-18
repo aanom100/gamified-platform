@@ -339,7 +339,7 @@ app.post('/api/classrooms/:classroomId/approve', auth, async (req, res) => {
         res.status(200).json({ message: 'Student approved successfully!' });
     } catch (error) {
         console.error("Approval Error:", error);
-        res.status(500).json({ error: 'Failed to approve student.' });
+        res.status(500).json({ error: 'Failed to approve this student.' });
     }
 });
 // GET A PROFESSOR'S CLASSROOMS
