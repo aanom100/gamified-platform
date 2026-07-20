@@ -450,6 +450,60 @@ app.get('/api/leaderboard/global', auth, async (req, res) => {
         res.status(500).json({ error: 'Failed to generate global leaderboard.' });
     }
 });
+
+// DELETE A CHALLENGE
+app.delete('/api/challenges/:challengeId', auth, async (req, res) => {
+  try {
+    // Role check (Matches your existing style)
+    if (req.user.role !== 'professor') {
+        return res.status(403).json({ error: 'Access denied. Only professors can delete challenges.' });
+    }
+
+    const { challengeId } = req.params;
+
+    // Find and delete in one step
+    const deletedChallenge = await Challenge.findByIdAndDelete(challengeId);
+
+    if (!deletedChallenge) {
+        return res.status(404).json({ error: 'Challenge not found!' });
+    }
+
+    res.status(200).json({ message: 'Challenge deleted successfully!' });
+
+  } catch (error) {
+    console.error("Delete challenge error:", error);
+    res.status(500).json({ error: 'Failed to delete challenge.' });
+  }
+});
+// END A CHALLENGE (Set isActive to false)
+app.patch('/api/challenges/:challengeId/status', auth, async (req, res) => {
+  try {
+    // Role check
+    if (req.user.role !== 'professor') {
+        return res.status(403).json({ error: 'Access denied. Only professors can modify challenges.' });
+    }
+
+    const { challengeId } = req.params;
+
+    // findByIdAndUpdate takes (id, updates, options)
+    // { new: true } returns the document AFTER the update is applied
+    const updatedChallenge = await Challenge.findByIdAndUpdate(
+        challengeId,
+        { isActive: false },
+        { new: true }
+    );
+
+    if (!updatedChallenge) {
+        return res.status(404).json({ error: 'Challenge not found!' });
+    }
+
+    res.status(200).json(updatedChallenge);
+
+  } catch (error) {
+    console.error("End challenge error:", error);
+    res.status(500).json({ error: 'Failed to end challenge.' });
+  }
+});
 const PORT=process.env.PORT || 5000;
 app.listen(PORT,()=>{
     console.log(`Server is running on ${PORT}...`)

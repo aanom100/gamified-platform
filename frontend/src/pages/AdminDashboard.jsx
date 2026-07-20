@@ -3,8 +3,10 @@ import {
   Box, Flex, VStack, Heading, Text, Button, Grid, 
   Card, CardHeader, CardBody, Badge, Divider, useToast, HStack,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, 
-  ModalBody, ModalCloseButton, Input, useDisclosure, FormControl, FormLabel, Textarea
+  ModalBody, ModalCloseButton, Input, useDisclosure, FormControl, FormLabel, Textarea,
+  MenuButton,Menu, MenuList, MenuItem, IconButton
 } from '@chakra-ui/react';
+import { HamburgerIcon } from "@chakra-ui/icons"; 
 import { useNavigate } from 'react-router-dom';
 
 function AdminDashboard() {
@@ -215,7 +217,54 @@ function AdminDashboard() {
             toast({ title: 'Network Error', status: 'error', duration: 2000 });
         }
     };
-    
+    const handleDeleteChallenge = async (challengeId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://gamified-platform-1.onrender.com/api/challenges/${challengeId}`, {
+      method: 'DELETE',
+      headers: {
+        'x-auth-token': token
+      }
+    });
+
+    if (response.ok) {
+      toast({ title: 'Challenge Deleted', status: 'success', duration: 2000 });
+      
+      // Optimistic UI Update: Instantly remove it from the screen
+      setActiveChallenges(activeChallenges.filter(challenge => challenge._id !== challengeId));
+    } else {
+      toast({ title: 'Failed to delete challenge', status: 'error', duration: 2000 });
+    }
+  } catch (error) {
+    console.error(error);
+    toast({ title: 'Network Error', status: 'error', duration: 2000 });
+  }
+};
+const handleEndChallenge = async (challengeId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://gamified-platform-1.onrender.com/api/challenges/${challengeId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'x-auth-token': token
+      }
+    });
+
+    if (response.ok) {
+      toast({ title: 'Challenge Ended', status: 'success', duration: 2000 });
+      
+      // Optimistic UI Update: Instantly change the status in the UI
+      setActiveChallenges(activeChallenges.map(challenge => 
+        challenge._id === challengeId ? { ...challenge, isActive: false } : challenge
+      ));
+    } else {
+      toast({ title: 'Failed to end challenge', status: 'error', duration: 2000 });
+    }
+  } catch (error) {
+    console.error(error);
+    toast({ title: 'Network Error', status: 'error', duration: 2000 });
+  }
+};
     const formatExternalLink=(url)=>
     {
         if(!url) return '#';
@@ -343,6 +392,19 @@ function AdminDashboard() {
                     <Text fontSize="sm" color="gray.600" noOfLines={2}>
                         {challenge.description}
                     </Text>
+                    <Menu>
+                        <MenuButton as={IconButton} aria-label="Options" icon={<HamburgerIcon/>} variant ="ghost" size="sm">
+              
+                        </MenuButton>
+                        <MenuList>
+                            <MenuItem color="red.500" onClick={() => handleDeleteChallenge(challenge._id)}>
+  Delete
+</MenuItem>
+<MenuItem onClick={() => handleEndChallenge(challenge._id)}>
+  End
+</MenuItem>
+                        </MenuList>
+                    </Menu>
                 </Box>
             ))}
         </VStack>
