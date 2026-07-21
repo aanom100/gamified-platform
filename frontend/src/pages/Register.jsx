@@ -14,7 +14,7 @@ import {
   InputGroup,
   InputRightElement,
   Select,
-  Link
+  Link,Stack
 } from '@chakra-ui/react';
 
 function Register() {
