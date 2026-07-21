@@ -384,29 +384,49 @@ const handleEndChallenge = async (challengeId) => {
     {activeChallenges && activeChallenges.length > 0 ? (
         <VStack align="stretch" spacing={4}>
             {activeChallenges.map((challenge) => (
-                <Box key={challenge._id} p={4} borderWidth="1px" borderRadius="md" bg="gray.50" _hover={{ shadow: 'sm' }}>
-                    <Flex justify="space-between" align="center" mb={2}>
-                        <Heading size="sm">{challenge.title}</Heading>
-                        <Badge colorScheme="purple">{challenge.points || 50} XP</Badge>
-                    </Flex>
-                    <Text fontSize="sm" color="gray.600" noOfLines={2}>
-                        {challenge.description}
-                    </Text>
-                    <Menu>
-                        <MenuButton as={IconButton} aria-label="Options" icon={<HamburgerIcon/>} variant ="ghost" size="sm">
-              
-                        </MenuButton>
-                        <MenuList>
-                            <MenuItem color="red.500" onClick={() => handleDeleteChallenge(challenge._id)}>
-  Delete
-</MenuItem>
-<MenuItem onClick={() => handleEndChallenge(challenge._id)}>
-  End
-</MenuItem>
-                        </MenuList>
-                    </Menu>
-                </Box>
-            ))}
+    <Box 
+        key={challenge._id} 
+        p={4} 
+        borderWidth="1px" 
+        borderRadius="md" 
+        // 1. Change background to gray if it is ended
+        bg={challenge.isActive === false ? 'gray.200' : 'gray.50'} 
+        // 2. Make it slightly transparent if ended
+        opacity={challenge.isActive === false ? 0.6 : 1}
+        _hover={{ shadow: 'sm' }}
+    >
+        <Flex justify="space-between" align="center" mb={2}>
+            <HStack>
+                <Heading size="sm">{challenge.title}</Heading>
+                {/* 3. Add a red ENDED badge next to the title */}
+                {challenge.isActive === false && (
+                    <Badge colorScheme="red" ml={2}>ENDED</Badge>
+                )}
+            </HStack>
+            <Badge colorScheme={challenge.isActive === false ? "gray" : "purple"}>
+                {challenge.points || 50} XP
+            </Badge>
+        </Flex>
+        <Text fontSize="sm" color="gray.600" noOfLines={2}>
+            {challenge.description}
+        </Text>
+        
+        {/* Only show the menu button if the challenge is still active */}
+        {challenge.isActive !== false && (
+            <Menu>
+                <MenuButton as={IconButton} aria-label="Options" icon={<HamburgerIcon/>} variant="ghost" size="sm" mt={2} />
+                <MenuList>
+                    <MenuItem color="red.500" onClick={() => handleDeleteChallenge(challenge._id)}>
+                        Delete
+                    </MenuItem>
+                    <MenuItem onClick={() => handleEndChallenge(challenge._id)}>
+                        End
+                    </MenuItem>
+                </MenuList>
+            </Menu>
+        )}
+    </Box>
+))}
         </VStack>
     ) : (
         <Text color="gray.500">Challenges will appear here.</Text>

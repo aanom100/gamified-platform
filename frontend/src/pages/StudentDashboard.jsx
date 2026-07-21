@@ -270,7 +270,7 @@ const fetchGlobalLeaderboard = async () => {
         <Text color="gray.500">No active challenges deployed in this arena yet.</Text>
     ) : (
         <Grid templateColumns="repeat(auto-fill, minmax(320px, 1fr))" gap={6}>
-            {challenges.map((challenge) => (
+            {challenges.filter((challenge)=>challenge.isActive!==false).map((challenge) => (
                 <Card key={challenge._id} variant="outline" bg="white">
                     <CardHeader pb={2}>
                         <Flex justify="space-between" align="center">
