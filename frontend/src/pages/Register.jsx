@@ -88,7 +88,7 @@ function Register() {
             >
                 <VStack spacing="8">
                     <VStack spacing="2" textAlign="center">
-                        <Heading size="xl">Join the Arena</Heading>
+                        <Heading size={{ base: "lg", md: "xl" }}>Join the Arena</Heading>
                         <Text color="gray.500">Create your account to start earning XP.</Text>
                     </VStack>
 
@@ -125,6 +125,7 @@ function Register() {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         focusBorderColor="blue.500"
+                                        pr="4.5rem"
                                     />
                                     <InputRightElement width="4.5rem">
                                         <Button h="1.75rem" size="sm" onClick={() => setShowPassword(!showPassword)}>

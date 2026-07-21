@@ -193,11 +193,19 @@ const fetchGlobalLeaderboard = async () => {
     };
 
     return (
-        <Flex bg="gray.50" minH="100vh">
-            {/* SIDEBAR ANCHOR */}
-            <Box w="250px" bg="gray.900" color="white" h="100vh" p={5} position="fixed">
-                <Heading size="md" mb={8} color="purple.400">Student OS</Heading>
-                <VStack align="start" spacing={4}>
+        <Flex direction={{ base: "column", md: "row" }} bg="gray.50" minH="100vh">
+  {/* SIDEBAR ANCHOR */}
+  <Box 
+    w={{ base: "100%", md: "250px" }} 
+    bg="gray.900" 
+    color="white" 
+    h={{ base: "auto", md: "100vh" }} 
+    p={{ base: 4, md: 5 }} 
+    position={{ base: "relative", md: "fixed" }}
+  >
+    <Heading size="md" mb={{ base: 4, md: 8 }} color="purple.400">Student OS</Heading>
+    {/* Changed VStack to Stack for mobile row layout */}
+    <Stack direction={{ base: "row", md: "column" }} align="start" spacing={4} overflowX="auto">
                     <Button 
                         variant={activeTab === 'arena' ? 'solid' : 'ghost'} 
                         colorScheme="purple" w="full" justifyContent="flex-start"
@@ -220,11 +228,11 @@ const fetchGlobalLeaderboard = async () => {
                     >
                         👤 Profile
                     </Button>
-                </VStack>
+                </Stack>
             </Box>
             
             {/* MAIN CONTENT WORKSPACE */}
-            <Box ml="250px" p={8} w="full">
+<Box ml={{ base: 0, md: "250px" }} p={{ base: 4, md: 8 }} w="full">
                 
                 {/* 1. THE ARENA TAB */}
 {activeTab === 'arena' && (
@@ -236,9 +244,9 @@ const fetchGlobalLeaderboard = async () => {
                     ← Back to Classrooms
                 </Button>
                 
-                <Flex justify="space-between" align="center" mb={6}>
-                    <Box>
-                        <Heading size="lg">🏟️ {activeArena?.name} Arena</Heading>
+                <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "stretch", md: "center" }} gap={4} mb={6}>
+  <Box>
+    <Heading size="lg">🏰 {activeArena?.name} Arena</Heading>
                         <Text color="gray.500" mt={1}>Complete quests and climb the ranks.</Text>
                     </Box>
                     

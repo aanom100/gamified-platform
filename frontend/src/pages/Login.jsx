@@ -95,7 +95,7 @@ if (data.user.role === 'professor') {
             >
                 <VStack spacing="8">
                     <VStack spacing="2" textAlign="center">
-                        <Heading size="xl">Welcome back</Heading>
+                        <Heading size={{ base: "lg", md: "xl" }}>Welcome back</Heading>
                         <Text color="gray.500">Enter your credentials to access the arena.</Text>
                     </VStack>
 
@@ -121,6 +121,7 @@ if (data.user.role === 'professor') {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         focusBorderColor="blue.500"
+                                        pr="4.5rem"
                                     />
                                     <InputRightElement width="4.5rem">
                                         <Button h="1.75rem" size="sm" onClick={() => setShowPassword(!showPassword)}>

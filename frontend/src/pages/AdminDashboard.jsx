@@ -274,11 +274,19 @@ const handleEndChallenge = async (challengeId) => {
         return url;
     }
     return (
-        <Flex bg="gray.50" minH="100vh">
-            {/* SIDEBAR ANCHOR */}
-            <Box w="250px" bg="gray.900" color="white" h="100vh" p={5} position="fixed">
-                <Heading size="md" mb={8} color="blue.400">Professor OS</Heading>
-                <VStack align="start" spacing={4}>
+       <Flex direction={{ base: "column", md: "row" }} bg="gray.50" minH="100vh">
+  {/* SIDEBAR ANCHOR */}
+  <Box 
+    w={{ base: "100%", md: "250px" }} 
+    bg="gray.900" 
+    color="white" 
+    h={{ base: "auto", md: "100vh" }} 
+    p={{ base: 4, md: 5 }} 
+    position={{ base: "relative", md: "fixed" }}
+  >
+    <Heading size="md" mb={{ base: 4, md: 8 }} color="blue.400">Professor OS</Heading>
+    {/* Changed VStack to Stack to allow row on mobile */}
+    <Stack direction={{ base: "row", md: "column" }} align="start" spacing={4} overflowX="auto">
                     <Button 
                         variant={activeTab === 'classrooms' || activeTab === 'class-detail' ? 'solid' : 'ghost'} 
                         colorScheme="blue" w="full" justifyContent="flex-start"
@@ -300,16 +308,16 @@ const handleEndChallenge = async (challengeId) => {
                     >
                         👤 Profile
                     </Button>
-                </VStack>
+                </Stack>
             </Box>
             
             {/* MAIN CONTENT WORKSPACE */}
-            <Box ml="250px" p={8} w="full">
+<Box ml={{ base: 0, md: "250px" }} p={{ base: 4, md: 8 }} w="full">
                 
                 {/* 1. CLASSROOMS GRID TAB */}
                 {activeTab === 'classrooms' && (
                     <Box>
-                        <Flex justify="space-between" align="center" mb={6}>
+                       <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "stretch", sm: "center" }} gap={4} mb={6}>
                             <Heading size="lg">Active Classrooms</Heading>
                             <Button colorScheme="blue" onClick={openCreateClass}>➕ Create Classroom</Button>
                         </Flex>
@@ -363,7 +371,7 @@ const handleEndChallenge = async (challengeId) => {
                         <Button mb={4} size="sm" onClick={() => setActiveTab('classrooms')}>
                             ← Back to Classrooms
                         </Button>
-                        <Flex justify="space-between" align="center" mb={6}>
+                        <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "stretch", sm: "center" }} gap={4} mb={6}>
                             <Box>
                                 <Heading size="lg">{selectedClassroom?.name}</Heading>
                                 <Text color="gray.500" mt={1}>
@@ -376,7 +384,7 @@ const handleEndChallenge = async (challengeId) => {
                         </Flex>
 
                         {/* We will populate these with real data later! */}
-                        <Grid templateColumns="1fr 1fr" gap={8}>
+<Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={{ base: 4, lg: 8 }}>
                             <Box p={5} bg="white" borderRadius="md" shadow="sm" border="1px" borderColor="gray.200">
     <Heading size="md" mb={4}>Active Challenges</Heading>
     
